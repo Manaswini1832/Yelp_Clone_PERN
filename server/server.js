@@ -6,8 +6,10 @@ const { Pool } = require("pg");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const db = require("./db/index");
+const cors = require("cors");
 
 //Middleware
+app.use(cors());
 app.use(express.json()); //Comes built in with express. It takes stuff from inside body of req and sends it to our route handler
 
 //Get all restaurants
@@ -15,7 +17,7 @@ app.get("/api/v1/restaurants", async(req, res) => {
     //Make request to postgres
     try {
         const response = await db.query("SELECT * FROM restaurants");
-        const data = response.rows[0];
+        const data = response.rows;
         res.status(200).json({
             status: "Success",
             data: {
@@ -31,13 +33,13 @@ app.get("/api/v1/restaurants", async(req, res) => {
 app.get("/api/v1/restaurants/:restaurantId", async(req, res) => {
     try {
         const restaurantId = req.params.restaurantId;
-        const response = await db.query("SELECT name,location,price_range FROM restaurants WHERE id = $1", [restaurantId]);
-        console.log(response.rows[0]);
-    
+        const restaurant = await db.query("SELECT * FROM restaurants WHERE id = $1", [restaurantId]);
+        const reviews = await db.query("SELECT * FROM reviews WHERE restaurant_id = $1", [restaurantId]);
         res.status(200).json({
             status: "Success",
             data : {
-                restaurant: response.rows[0]
+                restaurant: restaurant.rows[0],
+                reviews : reviews.rows
             }
         }); 
     } catch (err) {
